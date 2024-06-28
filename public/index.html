@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistent za Elektroniko</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-image: url('background.jpeg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        #chatbox {
+            width: 50%;
+            max-width: 600px;
+            height: 70vh;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            overflow-y: scroll;
+            padding: 10px;
+        }
+        #inputbox {
+            width: 50%;
+            max-width: 600px;
+            margin-top: 10px;
+            display: flex;
+        }
+        #userinput {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        #sendbtn {
+            padding: 10px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        .message strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatbox"></div>
+    <div id="inputbox">
+        <input type="text" id="userinput" placeholder="Vnesite svoje vprašanje...">
+        <button id="sendbtn">Pošlji</button>
+    </div>
+
+    <script>
+        const assistantWelcomeMessage = "Sem Elechat, vprašaj me za pomoč pri elektroniki.";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            appendMessage('Elechat', assistantWelcomeMessage);
+        });
+
+        document.getElementById('sendbtn').addEventListener('click', async () => {
+            const userInput = document.getElementById('userinput').value;
+            if (userInput.trim() === '') return;
+
+            appendMessage('Uporabnik', userInput);
+            document.getElementById('userinput').value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: userInput })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                appendMessage('Elechat', formatMessage(data.reply));
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('Elechat', 'Prišlo je do napake. Prosim, poskusite znova.');
+            }
+        });
+
+        function appendMessage(sender, message) {
+            const chatbox = document.getElementById('chatbox');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatbox.appendChild(messageElement);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function formatMessage(message) {
+            // Odstrani vse oznake za sezname in vrni osnovno besedilo
+            let formattedMessage = message.replace(/\n/g, '<br>');
+            formattedMessage = formattedMessage.replace(/(\d+)\.\s+/g, '');
+            formattedMessage = formattedMessage.replace(/•\s+/g, '');
+            return formattedMessage;
+        }
+    </script>
+</body>
+</html>
